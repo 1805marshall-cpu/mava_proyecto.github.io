@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Nodal: IPR & VLP (Con Líneas de Intersección)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f4f8;
+            color: #2d3748;
+        }
+        .container {
+            max-width: 1250px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #1a365d;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #4a5568;
+            font-size: 14px;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 25px;
+        }
+        .panel {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        h3 {
+            color: #2b6cb0;
+            border-bottom: 2px solid #cbd5e0;
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            background: #fff;
+        }
+        button {
+            background-color: #2b6cb0;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #2c5282;
+        }
+        .results-box {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border-left: 5px solid #3182ce;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+            width: 100%;
+        }
+        .formula-card {
+            background: #fff;
+            padding: 10px;
+            border: 1px dashed #a0aec0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #2d3748;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+        .workflow-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            background: #ebf8ff;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            text-align: center;
+        }
+        .workflow-step {
+            flex: 1;
+            padding: 0 5px;
+            border-right: 1px solid #bee3f8;
+        }
+        .workflow-step:last-child {
+            border-right: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>IPR & VLP IN OIL & GAS WELLS</h1>
+    <div class="subtitle">Nodal Analysis for Well Performance (Con Proyecciones de Intersección)</div>
+    
+    <div class="grid">
+        <!-- PANEL DE ENTRADA -->
+        <div class="panel">
+            <h3>1. Parámetros y Selección (IPR / VLP)</h3>
+            
+            <div class="form-group">
+                <label for="oilWellType">Seleccionar Condición del Pozo (Sección 2. A):</label>
+                <select id="oilWellType" onchange="toggleFormulas()">
+                    <option value="vogel">2. Vogel IPR - Saturated Conditions (Saturado)</option>
+                    <option value="linear">1. Linear IPR - Undersaturated Conditions (Subsaturado)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="pr">Presión Estática del Yacimiento, $P_r$ (psi):</label>
+                <input type="number" id="pr" value="3000">
+            </div>
+
+            <div class="form-group">
+                <label for="pwfCurrent">Presión de Fondo Fluyente Actual, $P_{wf}$ (psi):</label>
+                <input type="number" id="pwfCurrent" value="1500">
+            </div>
+
+            <div id="vogelGroup" class="form-group">
+                <label for="qmax">Caudal Máximo / AOF, $q_{max}$ (STB/D):</label>
+                <input type="number" id="qmax" value="1200">
+                <div class="formula-card">
+                    Eq. Vogel: $q = q_{max} \left[1 - 0.2\left(\frac{P_{wf}}{P_r}\right) - 0.8\left(\frac{P_{wf}}{P_r}\right)^2\right]$
+                </div>
+            </div>
+
+            <div id="linearGroup" class="form-group" style="display:none;">
+                <label for="jIndex">Índice de Productividad, $J$ (STB/D/psi):</label>
+                <input type="number" id="jIndex" value="0.5">
+                <div class="formula-card">
+                    Eq. Lineal: $q = J(P_r - P_{wf})$
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="pwh">Presión en Cabeza / Separador, $P_{sep}$ (psi):</label>
+                <input type="number" id="pwh" value="200">
+            </div>
+
+            <button onclick="ejecutarAnalisisNodal()">Ejecutar Matching y Trazar Líneas</button>
+            
+            <div class="results-box" id="resultados">
+                <h4>Resultados del Punto de Trabajo ($Q_o, P_o$):</h4>
+                <p>Presione el botón para calcular.</p>
+            </div>
+        </div>
+
+        <!-- PANEL DE GRAFICA -->
+        <div class="panel">
+            <h3>Gráfica Nodal (Con Líneas de Proyección)</h3>
+            <div class="chart-container">
+                <canvas id="nodalChart"></canvas>
+            </div>
+            
+            <div class="workflow-steps">
+                <div class="workflow-step"><strong>1. Build IPR</strong><br>Estimar $P_r$</div>
+                <div class="workflow-step"><strong>2. Build VLP</strong><br>Definir geometría</div>
+                <div class="workflow-step"><strong>3. Match Curves</strong><br>Intersección $(Q_o, P_o)$</div>
+                <div class="workflow-step"><strong>4. Analyze</strong><br>Optimización</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let myChart = null;
+
+    function toggleFormulas() {
+        const type = document.getElementById('oilWellType').value;
+        if (type === 'vogel') {
+            document.getElementById('vogelGroup').style.display = 'block';
+            document.getElementById('linearGroup').style.display = 'none';
+        } else {
+            document.getElementById('vogelGroup').style.display = 'none';
+            document.getElementById('linearGroup').style.display = 'block';
+        }
+    }
+
+    function ejecutarAnalisisNodal() {
+        const type = document.getElementById('oilWellType').value;
+        const Pr = parseFloat(document.getElementById('pr').value);
+        const PwfCurrent = parseFloat(document.getElementById('pwfCurrent').value);
+        const Psep = parseFloat(document.getElementById('pwh').value);
+
+        let qValuesIPR = [];
+        let pwfValuesIPR = [];
+        let aof = 0;
+
+        // 1. Curva IPR
+        if (type === 'vogel') {
+            const qmax = parseFloat(document.getElementById('qmax').value);
+            aof = qmax;
+            for (let pwf = 0; pwf <= Pr; pwf += Pr / 30) {
+                let ratio = pwf / Pr;
+                let q = qmax * (1 - 0.2 * ratio - 0.8 * Math.pow(ratio, 2));
+                if (q < 0) q = 0;
+                pwfValuesIPR.push(pwf);
+                qValuesIPR.push(q);
+            }
+        } else {
+            const J = parseFloat(document.getElementById('jIndex').value);
+            aof = J * Pr;
+            for (let pwf = 0; pwf <= Pr; pwf += Pr / 30) {
+                let q = J * (Pr - pwf);
+                if (q < 0) q = 0;
+                pwfValuesIPR.push(pwf);
+                qValuesIPR.push(q);
+            }
+        }
+
+        // 2. Curva VLP
+        let qValuesVLP = [];
+        let pwfValuesVLP = [];
+        let maxQ = Math.max(...qValuesIPR);
+
+        for (let q = 0; q <= maxQ; q += maxQ / 30) {
+            let pwf_vlp = Psep + (0.4 * q) + (0.0001 * Math.pow(q, 1.8)); 
+            qValuesVLP.push(q);
+            pwfValuesVLP.push(pwf_vlp);
+        }
+
+        // 3. Encontrar Intersección Óptima (Qo, Po)
+        let qOpt = 0;
+        let pOpt = 0;
+        let minDiff = Infinity;
+
+        for (let i = 0; i < qValuesIPR.length; i++) {
+            let q_ipr = qValuesIPR[i];
+            let p_ipr = pwfValuesIPR[i];
+            
+            for (let j = 0; j < qValuesVLP.length; j++) {
+                let q_vlp = qValuesVLP[j];
+                let p_vlp = pwfValuesVLP[j];
+
+                let diff = Math.abs(q_ipr - q_vlp) + Math.abs(p_ipr - p_vlp);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    qOpt = (q_ipr + q_vlp) / 2;
+                    pOpt = (p_ipr + p_vlp) / 2;
+                }
+            }
+        }
+
+        // 4. Crear datasets para las líneas punteadas de proyección hacia los ejes
+        // Línea horizontal punteada desde el eje Y (P_o) hasta el punto (Q_o, P_o)
+        let lineToY = [
+            {x: 0, y: pOpt},
+            {x: qOpt, y: pOpt}
+        ];
+
+        // Línea vertical punteada desde el punto (Q_o, P_o) hasta el eje X (Q_o)
+        let lineToX = [
+            {x: qOpt, y: pOpt},
+            {x: qOpt, y: 0}
+        ];
+
+        // Mostrar resultados numéricos
+        document.getElementById('resultados').innerHTML = `
+            <h4>Punto Operativo Óptimo (Intersección Nodal):</h4>
+            <p><strong>Caudal de Operación ($Q_o$):</strong> <span style="color:#2b6cb0; font-weight:bold;">${qOpt.toFixed(2)} STB/D</span></p>
+            <p><strong>Presión de Fondo ($P_o$):</strong> <span style="color:#2b6cb0; font-weight:bold;">${pOpt.toFixed(2)} psi</span></p>
+            <p><strong>AOF (Absolute Open Flow):</strong> ${aof.toFixed(2)} STB/D</p>
+        `;
+
+        // 5. Renderizar Gráfica con Chart.js
+        const ctx = document.getElementById('nodalChart').getContext('2d');
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'IPR (Inflow Performance)',
+                        data: qValuesIPR.map((q, idx) => ({x: q, y: pwfValuesIPR[idx]})),
+                        borderColor: '#22c55e', // Verde
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'VLP (Vertical Lift Performance)',
+                        data: qValuesVLP.map((q, idx) => ({x: q, y: pwfValuesVLP[idx]})),
+                        borderColor: '#3b82f6', // Azul
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Proyección Horizontal a Presión (Po)',
+                        data: lineToY,
+                        borderColor: '#ef4444',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5], // Línea punteada
+                        pointRadius: 0,
+                        type: 'line'
+                    },
+                    {
+                        label: 'Proyección Vertical a Caudal (Qo)',
+                        data: lineToX,
+                        borderColor: '#ef4444',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5], // Línea punteada
+                        pointRadius: 0,
+                        type: 'line'
+                    },
+                    {
+                        label: 'Punto de Trabajo Actual (Qo, Po)',
+                        data: [{x: qOpt, y: pOpt}],
+                        borderColor: '#ef4444',
+                        backgroundColor: '#ef4444',
+                        pointRadius: 9,
+                        type: 'scatter'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: { display: true, text: 'Caudal q (STB/D or MSCF/D)' },
+                        grid: { color: '#e2e8f0' }
+                    },
+                    y: {
+                        type: 'linear',
+                        title: { display: true, text: 'Bottom Hole Pressure BHP / Pwf (psi)' },
+                        grid: { color: '#e2e8f0' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    window.onload = ejecutarAnalisisNodal;
+</script>
+
+</body>
+</html>
