@@ -9,7 +9,7 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             background-color: #f0f4f8;
             color: #2d3748;
         }
@@ -17,38 +17,59 @@
             max-width: 1250px;
             margin: auto;
             background: #fff;
-            padding: 30px;
+            padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        @media (min-width: 768px) {
+            .container {
+                padding: 30px;
+            }
+            body {
+                padding: 20px;
+            }
         }
         h1 {
             text-align: center;
             color: #1a365d;
             margin-bottom: 5px;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
         }
         .subtitle {
             text-align: center;
             color: #4a5568;
-            font-size: 14px;
+            font-size: clamp(11px, 2vw, 14px);
             margin-bottom: 25px;
             font-weight: bold;
         }
         .grid {
             display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 25px;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 992px) {
+            .grid {
+                grid-template-columns: 1fr 1.5fr;
+                gap: 25px;
+            }
         }
         .panel {
             background: #f7fafc;
             border: 1px solid #e2e8f0;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
+        }
+        @media (min-width: 768px) {
+            .panel {
+                padding: 20px;
+            }
         }
         h3 {
             color: #2b6cb0;
             border-bottom: 2px solid #cbd5e0;
             padding-bottom: 5px;
             margin-top: 0;
+            font-size: 1.1rem;
         }
         .form-group {
             margin-bottom: 15px;
@@ -61,11 +82,12 @@
         }
         input, select {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             box-sizing: border-box;
             border: 1px solid #cbd5e0;
             border-radius: 4px;
             background: #fff;
+            font-size: 16px; /* Evita el zoom automático en iOS al hacer foco */
         }
         button {
             background-color: #2b6cb0;
@@ -89,11 +111,17 @@
             border-radius: 6px;
             margin-top: 20px;
             border-left: 5px solid #3182ce;
+            word-break: break-word;
         }
         .chart-container {
             position: relative;
-            height: 500px;
+            height: 350px;
             width: 100%;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 500px;
+            }
         }
         .formula-card {
             background: #fff;
@@ -101,14 +129,16 @@
             border: 1px dashed #a0aec0;
             border-radius: 4px;
             font-family: monospace;
-            font-size: 12px;
+            font-size: 11px;
             color: #2d3748;
             margin-top: 5px;
             margin-bottom: 10px;
+            overflow-x: auto;
         }
         .workflow-steps {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 8px;
             margin-top: 20px;
             background: #ebf8ff;
             padding: 10px;
@@ -116,13 +146,27 @@
             font-size: 12px;
             text-align: center;
         }
+        @media (min-width: 600px) {
+            .workflow-steps {
+                flex-direction: row;
+                justify-content: space-between;
+                gap: 0;
+            }
+            .workflow-step {
+                flex: 1;
+                padding: 0 5px;
+                border-right: 1px solid #bee3f8;
+            }
+            .workflow-step:last-child {
+                border-right: none;
+            }
+        }
         .workflow-step {
-            flex: 1;
-            padding: 0 5px;
-            border-right: 1px solid #bee3f8;
+            padding: 5px;
+            border-bottom: 1px solid #bee3f8;
         }
         .workflow-step:last-child {
-            border-right: none;
+            border-bottom: none;
         }
     </style>
 </head>
@@ -281,13 +325,11 @@
         }
 
         // 4. Crear datasets para las líneas punteadas de proyección hacia los ejes
-        // Línea horizontal punteada desde el eje Y (P_o) hasta el punto (Q_o, P_o)
         let lineToY = [
             {x: 0, y: pOpt},
             {x: qOpt, y: pOpt}
         ];
 
-        // Línea vertical punteada desde el punto (Q_o, P_o) hasta el eje X (Q_o)
         let lineToX = [
             {x: qOpt, y: pOpt},
             {x: qOpt, y: 0}
@@ -310,45 +352,45 @@
             data: {
                 datasets: [
                     {
-                        label: 'IPR (Inflow Performance)',
+                        label: 'IPR (Inflow)',
                         data: qValuesIPR.map((q, idx) => ({x: q, y: pwfValuesIPR[idx]})),
-                        borderColor: '#22c55e', // Verde
+                        borderColor: '#22c55e',
                         borderWidth: 3,
                         pointRadius: 0,
                         tension: 0.1
                     },
                     {
-                        label: 'VLP (Vertical Lift Performance)',
+                        label: 'VLP (Lift)',
                         data: qValuesVLP.map((q, idx) => ({x: q, y: pwfValuesVLP[idx]})),
-                        borderColor: '#3b82f6', // Azul
+                        borderColor: '#3b82f6',
                         borderWidth: 3,
                         pointRadius: 0,
                         tension: 0.1
                     },
                     {
-                        label: 'Proyección Horizontal a Presión (Po)',
+                        label: 'Proyección Po',
                         data: lineToY,
                         borderColor: '#ef4444',
                         borderWidth: 1.5,
-                        borderDash: [5, 5], // Línea punteada
+                        borderDash: [5, 5],
                         pointRadius: 0,
                         type: 'line'
                     },
                     {
-                        label: 'Proyección Vertical a Caudal (Qo)',
+                        label: 'Proyección Qo',
                         data: lineToX,
                         borderColor: '#ef4444',
                         borderWidth: 1.5,
-                        borderDash: [5, 5], // Línea punteada
+                        borderDash: [5, 5],
                         pointRadius: 0,
                         type: 'line'
                     },
                     {
-                        label: 'Punto de Trabajo Actual (Qo, Po)',
+                        label: 'Punto Actual (Qo, Po)',
                         data: [{x: qOpt, y: pOpt}],
                         borderColor: '#ef4444',
                         backgroundColor: '#ef4444',
-                        pointRadius: 9,
+                        pointRadius: 8,
                         type: 'scatter'
                     }
                 ]
@@ -360,17 +402,17 @@
                     x: {
                         type: 'linear',
                         position: 'bottom',
-                        title: { display: true, text: 'Caudal q (STB/D or MSCF/D)' },
+                        title: { display: true, text: 'Caudal q (STB/D)' },
                         grid: { color: '#e2e8f0' }
                     },
                     y: {
                         type: 'linear',
-                        title: { display: true, text: 'Bottom Hole Pressure BHP / Pwf (psi)' },
+                        title: { display: true, text: 'BHP / Pwf (psi)' },
                         grid: { color: '#e2e8f0' }
                     }
                 },
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: { position: 'bottom', labels: { boxWidth: 12 } }
                 }
             }
         });
@@ -378,6 +420,5 @@
 
     window.onload = ejecutarAnalisisNodal;
 </script>
-
 </body>
 </html>
